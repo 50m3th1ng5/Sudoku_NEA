@@ -14,6 +14,7 @@ if __name__ == '__main__':
     puzzle = puzzle_creation(difficulty)#Generates the puzzle "Instantly" :)
 
     print(f"Time taken:{round(time.time() - start_time, 2)} seconds")
+    print(puzzle)
     print_board(puzzle)
 
     print("Program End")

@@ -1,9 +1,9 @@
-
-#Hard coded difficulties
 def set_difficulty(selected_difficulty):
     difficulty = {
-        'easy': 40,
-        'medium': 25,
-        'hard': 10,
+        'easy': 45,
+        'medium': 35,
+        'hard': 29,
+        'expert': 24,
+        'extreme': 20,
     }
     return difficulty[selected_difficulty]
