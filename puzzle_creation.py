@@ -1,23 +1,27 @@
 import random
 
-def create_full_board():
-    board = [['.'] * 9 for _ in range(9)]
 
-    def fill(row=0, colum=0):
+def create_full_board():
+    """Generates a random, fully completed valid 9x9 Sudoku board."""
+    board = [['.'] * 9 for _ in range(9)]
+    digits = [str(i) for i in range(1, 10)]
+
+    def fill(row=0, col=0):
         if row == 9:
             return True
-        next_r = row + 1 if colum == 8 else row
-        next_c = 0 if colum == 8 else colum + 1
 
-        nums = list(map(str, range(1, 10)))
-        random.shuffle(nums)  # Shuffle ensures a random unique board every time
+        next_r = row + 1 if col == 8 else row
+        next_c = 0 if col == 8 else col + 1
 
-        for num in nums:
-            if is_valid(board, row, colum, num):
-                board[row][colum] = num
+        # Use random.sample to avoid high-frequency array allocations in recursion loop
+        for num in random.sample(digits, 9):
+            if is_valid(board, row, col, num):
+                board[row][col] = num
+
                 if fill(next_r, next_c):
                     return True
-                board[row][colum] = '.'
+
+                board[row][col] = '.'
         return False
 
     fill()
@@ -25,36 +29,40 @@ def create_full_board():
 
 
 def is_valid(board, row, col, num_str):
-    # Check row and column
+    """Verifies if a number placement complies with Sudoku constraints."""
     for i in range(9):
         if board[row][i] == num_str or board[i][col] == num_str:
             return False
 
-    # Check 3x3 box
+    # Row slicing handles 3x3 box scanning faster than a nested loop
     box_row, box_col = 3 * (row // 3), 3 * (col // 3)
     for i in range(3):
-        for j in range(3):
-            if board[box_row + i][box_col + j] == num_str:
-                return False
+        if num_str in board[box_row + i][box_col:box_col + 3]:
+            return False
+
     return True
 
 
-def count_solutions_opt(board, row=0, colum=0, limit=2):
+def count_solutions_opt(board, row=0, col=0, limit=2):
+    """
+    Returns the number of unique solutions found up to the specified limit.
+    Modifies the board in-place to optimize performance.
+    """
     if row == 9:
-        return 1  # Reached the end, valid full solution found
+        return 1
 
-    next_r = row + 1 if colum == 8 else row
-    next_c = 0 if colum == 8 else colum + 1
+    next_r = row + 1 if col == 8 else row
+    next_c = 0 if col == 8 else col + 1
 
-    if board[row][colum] != '.':
+    if board[row][col] != '.':
         return count_solutions_opt(board, next_r, next_c, limit)
 
     count = 0
-    for num in map(str, range(1, 10)):
-        if is_valid(board, row, colum, num):
-            board[row][colum] = num
+    for num in "123456789":
+        if is_valid(board, row, col, num):
+            board[row][col] = num
             count += count_solutions_opt(board, next_r, next_c, limit)
-            board[row][colum] = '.'  # Backtrack
+            board[row][col] = '.'
 
             if count >= limit:
                 return count
@@ -62,47 +70,41 @@ def count_solutions_opt(board, row=0, colum=0, limit=2):
 
 
 def puzzle_creation(clues_target):
-    #Start with a completed board
+    """Generates a playable Sudoku puzzle with a guaranteed unique solution."""
     board = create_full_board()
-
-    #Create a list of all 81 cell coordinates and shuffle them
     cells = [(r, c) for r in range(9) for c in range(9)]
     random.shuffle(cells)
 
     removed = 0
     max_removals = 81 - clues_target
 
-    #Iterate through the board
     for row, col in cells:
         if removed >= max_removals:
             break
 
         backup = board[row][col]
-        board[row][col] = '.'  # Attempt to empty the cell
+        board[row][col] = '.'
 
-        # Verify if the board has exactly one unique solution
-        if count_solutions_opt([r[:] for r in board]) == 1:
+        # Solvers naturally revert their board modifications, making copies unnecessary
+        if count_solutions_opt(board) == 1:
             removed += 1
         else:
-            board[row][col] = backup  #Use backup if board doesn't have a unique solution
+            board[row][col] = backup
 
     print(f"\nGenerated puzzle with {81 - removed} clues successfully!")
     return board
 
 
-'''Only Temporary was stolen from stack overflow for testing reasons'''
 def print_board(board):
-
+    """Prints the Sudoku board with a clean, formatted sub-grid grid layout."""
     print("\n-------------------------")
-
     for i in range(9):
         for j in range(9):
-            if board[i][j] is not None:
-                if j == 0:
-                    print("|", end=" ")
-                print(f"{board[i][j]} ", end="")
+            if j == 0:
+                print("|", end=" ")
+            print(f"{board[i][j]} ", end="")
             if (j + 1) % 3 == 0:
                 print("|", end=" ")
         if (i + 1) % 3 == 0:
-            print("\n-------------------------", end=" ")
+            print("\n-------------------------", end="")
         print()
